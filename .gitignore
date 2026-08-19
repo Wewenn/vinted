@@ -1,0 +1,27 @@
+# Secrets et config locale
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Tests / outils
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Données locales de l'assistant (profil Chrome, brouillons)
+.vinted-assistant/
+
+# OS
+.DS_Store
+Thumbs.db

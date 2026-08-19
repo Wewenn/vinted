@@ -1,0 +1,190 @@
+# Assistant Vinted 🧥🤖
+
+Un assistant IA personnel qui, **à partir de photos d'un article**, identifie ses
+caractéristiques, rédige une annonce Vinted (titre, description, hashtags,
+mots-clés) et **pré-remplit l'annonce dans _votre_ navigateur** en réutilisant
+votre session Vinted déjà ouverte.
+
+> ⚠️ **L'assistant ne publie JAMAIS une annonce automatiquement.** Il prépare
+> tout et s'arrête ; vous vérifiez et publiez vous-même dans le navigateur.
+
+---
+
+## Comment ça marche
+
+```
+Photos ──▶ Analyse vision (Claude) ──▶ Brouillon d'annonce ──▶ VOTRE validation
+                                                                      │
+                                              (connexion à votre Chrome via CDP)
+                                                                      ▼
+                                          Pré-remplissage du formulaire Vinted
+                                            (titre, description, photos…)
+                                                                      │
+                                                          ▶ Vous publiez à la main
+```
+
+- **Vision** : les photos sont envoyées à un modèle Claude qui identifie type,
+  marque, modèle, couleur, matière, style, taille, état, défauts et atouts.
+- **Navigateur** : l'outil se connecte à votre Chrome via le **protocole CDP**
+  (débogage distant). Il **réutilise votre session Vinted** — il ne voit jamais
+  votre identifiant ni votre mot de passe (vous vous connectez à Vinted
+  vous-même, une seule fois, dans le navigateur).
+- **Garde-fou** : aucun clic sur un bouton « Publier ». Jamais.
+
+L'outil s'exécute **sur votre machine** (c'est lui qui pilote votre navigateur
+local).
+
+---
+
+## Installation
+
+Prérequis : **Python 3.10+** et **Google Chrome** installés.
+
+```bash
+# 1. Récupérer le projet, puis dans le dossier :
+python -m venv .venv
+source .venv/bin/activate          # Windows : .venv\Scripts\activate
+
+# 2. Installer les dépendances
+pip install -r requirements.txt
+# (ou, pour la commande `vinted-assistant` : pip install -e .)
+```
+
+> 💡 Pas besoin de `playwright install` : l'outil se connecte à **votre** Chrome,
+> il n'a pas besoin de télécharger un navigateur.
+
+### Clé API Anthropic
+
+L'analyse des photos nécessite une clé API Anthropic :
+
+```bash
+cp .env.example .env
+# éditez .env et renseignez ANTHROPIC_API_KEY=sk-ant-...
+```
+
+(Alternative : `ant auth login` si vous utilisez déjà la CLI Anthropic.)
+
+---
+
+## Utilisation
+
+### 1) Lancer Chrome connecté à l'assistant
+
+```bash
+python -m vinted_assistant launch
+```
+
+Cela ouvre **Chrome avec un profil dédié** et le débogage distant activé, puis
+va sur Vinted. **Connectez-vous à Vinted dans cette fenêtre** (uniquement la
+première fois : la session est mémorisée dans ce profil).
+
+> **Pourquoi un profil dédié ?** Depuis Chrome 136, le débogage distant est
+> refusé sur le profil Chrome par défaut (sécurité). L'assistant utilise donc un
+> profil séparé (`~/.vinted-assistant/chrome-profile`). Vous vous y connectez à
+> Vinted une fois, et c'est réglé. Vos identifiants ne transitent jamais par
+> l'outil.
+
+Vérifiez que tout est prêt :
+
+```bash
+python -m vinted_assistant check
+```
+
+### 2) Créer une annonce à partir de photos
+
+```bash
+# Plusieurs photos :
+python -m vinted_assistant create photo1.jpg photo2.jpg photo3.jpg
+
+# …ou tout un dossier :
+python -m vinted_assistant create --dir ./mon-article
+
+# …avec un contexte utile (facultatif) :
+python -m vinted_assistant create --dir ./mon-article \
+  --context "taille M, portée 2 fois, achetée en 2023"
+```
+
+L'assistant :
+1. analyse les photos et **affiche** les caractéristiques + l'annonce proposée ;
+2. enregistre un brouillon JSON dans `~/.vinted-assistant/drafts/` ;
+3. **vous demande quoi faire** :
+   - `p` — **pré-remplir** l'annonce dans le navigateur (après confirmation) ;
+   - `e` — **éditer** le titre / la description / les tags (dans `$EDITOR`) ;
+   - `c` — **copier** le texte dans un fichier `.txt` ;
+   - `a` — **annuler**.
+
+Après le pré-remplissage, **vous complétez les derniers champs** (catégorie,
+taille, prix, état) et **vous publiez vous-même**.
+
+### Options utiles
+
+| Option | Effet |
+|---|---|
+| `--no-browser` | Analyse + export texte seulement, sans toucher au navigateur. |
+| `--no-photos-upload` | Ne pas déposer les photos automatiquement. |
+| `--json` | Sortie JSON brute (scripting). |
+| `--yes` | Pré-remplir directement après analyse (toujours **sans publier**). |
+| `--model` | Choisir le modèle (ex. `--model claude-sonnet-5` pour réduire le coût). |
+
+---
+
+## Configuration (`.env`)
+
+| Variable | Rôle | Défaut |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Clé API pour l'analyse vision. | — |
+| `VINTED_AI_MODEL` | Modèle Claude. | `claude-opus-5` |
+| `VINTED_BASE_URL` | Domaine Vinted (`.fr`, `.com`, `.de`…). | `https://www.vinted.fr` |
+| `VINTED_DEBUG_PORT` | Port de débogage Chrome. | `9222` |
+| `VINTED_CDP_URL` | URL CDP complète. | `http://localhost:9222` |
+| `VINTED_AI_HOME` | Répertoire de travail. | `~/.vinted-assistant` |
+
+---
+
+## Sécurité & vie privée
+
+- **Aucune publication automatique.** Le code ne clique jamais sur « Publier » —
+  c'est un choix d'architecture (voir `vinted_assistant/browser.py`).
+- **Vos identifiants restent chez vous.** Vous vous connectez à Vinted dans le
+  navigateur ; l'outil réutilise seulement la session ouverte.
+- **Vos photos** sont envoyées à l'API Anthropic pour l'analyse vision. Ne
+  traitez que des articles que vous acceptez d'analyser ainsi.
+- Le profil Chrome dédié et les brouillons sont stockés localement dans
+  `~/.vinted-assistant/` (ignoré par git).
+
+---
+
+## Dépannage
+
+- **« Navigateur inaccessible »** → lancez `python -m vinted_assistant launch`
+  et gardez la fenêtre ouverte. Vérifiez le port (`check`).
+- **Chrome ne s'ouvre pas** → indiquez le chemin : `launch --chrome-path "/chemin/vers/chrome"`.
+- **Titre/description non remplis** → Vinted fait évoluer son formulaire. Les
+  sélecteurs sont dans `vinted_assistant/browser.py`
+  (`TITLE_SELECTORS`, `DESCRIPTION_SELECTORS`) et faciles à ajuster. En attendant,
+  utilisez `c` pour copier le texte et le coller manuellement.
+- **Photos non déposées** → ajoutez-les manuellement ; le reste de l'annonce est
+  quand même pré-rempli.
+
+---
+
+## Développement
+
+```bash
+pip install -r requirements.txt pytest
+python -m pytest -q
+```
+
+Structure du projet :
+
+```
+vinted_assistant/
+├── cli.py         # interface en ligne de commande (orchestration + validation)
+├── analysis.py    # encodage des images + appel vision Claude (sortie structurée)
+├── models.py      # modèles Pydantic (caractéristiques + annonce)
+├── prompts.py     # invites en français
+├── browser.py     # connexion CDP + pré-remplissage Vinted (ne publie jamais)
+├── launcher.py    # lancement de Chrome (débogage distant + profil dédié)
+├── display.py     # affichage terminal (rich)
+└── config.py      # configuration / variables d'environnement
+```
