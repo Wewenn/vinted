@@ -332,6 +332,34 @@ def cmd_create(args: argparse.Namespace, config: Config) -> int:
 
 
 # --------------------------------------------------------------------------- #
+# Commande : web
+# --------------------------------------------------------------------------- #
+
+def cmd_web(args: argparse.Namespace, config: Config) -> int:
+    try:
+        from .webapp import run_server
+    except ImportError as exc:
+        _echo(
+            "Flask n'est pas installé. Faites : pip install flask\n"
+            f"Détail : {exc}"
+        )
+        return 1
+
+    if not config.anthropic_api_key:
+        _echo(
+            "⚠️  ANTHROPIC_API_KEY non définie — tentative via un profil "
+            "`ant auth login` existant.\n"
+        )
+    run_server(
+        config,
+        host=args.host,
+        port=args.port,
+        open_browser=not args.no_open,
+    )
+    return 0
+
+
+# --------------------------------------------------------------------------- #
 # Parsing des arguments
 # --------------------------------------------------------------------------- #
 
@@ -356,6 +384,17 @@ def build_parser() -> argparse.ArgumentParser:
     # check
     p_check = sub.add_parser("check", help="Vérifier la configuration et la connexion.")
     p_check.set_defaults(func=cmd_check)
+
+    # web
+    p_web = sub.add_parser(
+        "web", help="Lancer l'interface web locale (glisser-déposer des photos)."
+    )
+    p_web.add_argument("--host", default="127.0.0.1", help="Hôte d'écoute.")
+    p_web.add_argument("--port", type=int, default=5000, help="Port d'écoute.")
+    p_web.add_argument(
+        "--no-open", action="store_true", help="Ne pas ouvrir le navigateur."
+    )
+    p_web.set_defaults(func=cmd_web)
 
     # create
     p_create = sub.add_parser(

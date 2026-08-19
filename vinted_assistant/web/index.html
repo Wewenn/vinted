@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Assistant Vinted</title>
+<style>
+  :root {
+    --accent: #007782;
+    --accent-2: #09b1ba;
+    --bg: #f4f6f7;
+    --card: #ffffff;
+    --ink: #16232a;
+    --muted: #61727a;
+    --line: #e2e8ea;
+    --ok: #1f9d55;
+    --warn: #b7791f;
+    --err: #c0392b;
+    --radius: 14px;
+    --shadow: 0 6px 24px rgba(16, 40, 48, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1719; --card: #162124; --ink: #e8eef0; --muted: #93a4ab;
+      --line: #26383d; --shadow: 0 6px 24px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.5;
+  }
+  header {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff; padding: 22px 20px;
+  }
+  header .wrap { max-width: 960px; margin: 0 auto; }
+  header h1 { margin: 0; font-size: 1.35rem; display: flex; gap: 10px; align-items: center; }
+  header p { margin: 6px 0 0; opacity: .92; font-size: .92rem; }
+  .badge {
+    display: inline-block; margin-top: 10px; background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.35); padding: 4px 10px; border-radius: 999px;
+    font-size: .78rem; font-weight: 600;
+  }
+  main { max-width: 960px; margin: 22px auto 60px; padding: 0 20px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px;
+  }
+  h2 { font-size: 1.02rem; margin: 0 0 12px; }
+  label { font-size: .82rem; font-weight: 600; color: var(--muted); display: block; margin-bottom: 6px; }
+  .drop {
+    border: 2px dashed var(--line); border-radius: var(--radius); padding: 30px 16px;
+    text-align: center; cursor: pointer; transition: .15s; background: transparent;
+  }
+  .drop:hover, .drop.drag { border-color: var(--accent-2); background: rgba(9,177,186,.06); }
+  .drop strong { color: var(--accent); }
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; margin-top: 14px; }
+  .thumb { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .thumb button {
+    position: absolute; top: 3px; right: 3px; border: none; background: rgba(0,0,0,.6); color: #fff;
+    width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 12px; line-height: 1;
+  }
+  textarea, input[type=text], input[type=number] {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+    font: inherit; color: var(--ink); background: var(--card); resize: vertical;
+  }
+  textarea:focus, input:focus { outline: 2px solid var(--accent-2); border-color: transparent; }
+  .row { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .btn {
+    appearance: none; border: none; border-radius: 10px; padding: 11px 18px; font: inherit;
+    font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; transition: .12s;
+  }
+  .btn:hover { background: var(--accent-2); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+  .btn.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .btn.secondary:hover { background: rgba(9,177,186,.1); }
+  .btn.small { padding: 6px 12px; font-size: .82rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+  .muted { color: var(--muted); font-size: .86rem; }
+  .hidden { display: none !important; }
+  .field { margin-bottom: 16px; }
+  .field-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .field-head label { margin: 0; }
+  .attrs { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 18px; }
+  .attr { border-left: 3px solid var(--accent-2); padding: 2px 0 2px 10px; }
+  .attr .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .attr .v { font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { background: rgba(9,177,186,.12); color: var(--accent); border-radius: 999px; padding: 3px 10px; font-size: .82rem; }
+  .note { background: rgba(183,121,31,.1); border: 1px solid rgba(183,121,31,.3); color: var(--warn);
+          border-radius: 10px; padding: 10px 12px; font-size: .86rem; margin-top: 12px; }
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+    border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; vertical-align: -3px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px;
+    font-size: .88rem; opacity: 0; transition: .2s; pointer-events: none; z-index: 50;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .price-line { display: flex; align-items: center; gap: 10px; }
+  .price-line input { max-width: 130px; }
+  details summary { cursor: pointer; color: var(--muted); font-size: .86rem; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>🧥 Assistant Vinted</h1>
+    <p>Dépose tes photos + quelques infos → une fiche détaillée prête à vendre vite.</p>
+    <span class="badge">🔒 Ne publie jamais sans toi</span>
+  </div>
+</header>
+
+<main>
+  <!-- Étape 1 : entrées -->
+  <section class="card" id="input-card">
+    <h2>1. Tes photos</h2>
+    <div class="drop" id="drop">
+      <div>📷 <strong>Clique</strong> ou glisse-dépose ici tes photos de l'article</div>
+      <div class="muted" style="margin-top:6px">JPG, PNG, WEBP — plusieurs angles = meilleure analyse (max 20)</div>
+      <input type="file" id="file" accept="image/*" multiple class="hidden" />
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+
+    <div class="field" style="margin-top:18px">
+      <label for="context">Infos complémentaires (facultatif)</label>
+      <textarea id="context" rows="2" placeholder="ex. taille M, portée 2 fois, achetée en 2023, petite tache au dos…"></textarea>
+    </div>
+
+    <details>
+      <summary>Options avancées</summary>
+      <div class="field" style="margin-top:10px">
+        <label for="model">Modèle</label>
+        <input type="text" id="model" />
+      </div>
+    </details>
+
+    <div class="actions">
+      <button class="btn" id="analyze">✨ Générer la fiche</button>
+      <span class="muted" id="input-status"></span>
+    </div>
+  </section>
+
+  <!-- Étape 2 : fiche -->
+  <section class="card hidden" id="result-card">
+    <h2>2. Fiche proposée <span class="muted" style="font-weight:400">— modifie librement avant de copier / envoyer</span></h2>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="title">Titre</label>
+        <button class="btn secondary small" data-copy="title">Copier</button>
+      </div>
+      <input type="text" id="title" maxlength="100" />
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="description">Description</label>
+        <button class="btn secondary small" data-copy="description">Copier</button>
+      </div>
+      <textarea id="description" rows="8"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Caractéristiques détectées</label>
+      <div class="attrs" id="attrs"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="hashtags">Hashtags</label>
+        <button class="btn secondary small" data-copy="hashtags">Copier</button>
+      </div>
+      <input type="text" id="hashtags" placeholder="vintage levis jeanslim" />
+      <div class="chips" id="hashtag-chips"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="keywords">Mots-clés</label>
+        <button class="btn secondary small" data-copy="keywords">Copier</button>
+      </div>
+      <input type="text" id="keywords" placeholder="jean levis, 511 slim, denim homme" />
+    </div>
+
+    <div class="field">
+      <label>Prix conseillé pour vendre vite (indicatif)</label>
+      <div class="price-line">
+        <input type="number" id="price" step="1" min="0" placeholder="—" /> <span class="muted">€</span>
+      </div>
+    </div>
+
+    <div id="notes-wrap" class="hidden"><div class="note" id="notes"></div></div>
+
+    <div class="actions" style="margin-top:20px">
+      <button class="btn secondary" id="copy-all">📋 Copier toute la fiche</button>
+      <button class="btn" id="prefill">🌐 Pré-remplir dans Vinted</button>
+      <button class="btn secondary" id="restart">↺ Nouvel article</button>
+    </div>
+    <div class="muted" id="prefill-status" style="margin-top:10px"></div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let files = [];          // File[]
+let lastListing = null;  // dernière fiche renvoyée
+let sessionId = null;
+
+// --- Config ---
+fetch("/api/config").then(r => r.json()).then(c => { $("model").value = c.model; })
+  .catch(() => {});
+
+// --- Toast ---
+let toastTimer;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+// --- Sélection de photos ---
+const drop = $("drop");
+drop.addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", e => addFiles(e.target.files));
+["dragover","dragenter"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("drag"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("drag"); }));
+drop.addEventListener("drop", e => addFiles(e.dataTransfer.files));
+
+function addFiles(list) {
+  for (const f of list) {
+    if (f.type.startsWith("image/") && files.length < 20) files.push(f);
+  }
+  renderThumbs();
+}
+function renderThumbs() {
+  const box = $("thumbs"); box.innerHTML = "";
+  files.forEach((f, i) => {
+    const div = document.createElement("div"); div.className = "thumb";
+    const img = document.createElement("img"); img.src = URL.createObjectURL(f);
+    const btn = document.createElement("button"); btn.textContent = "×";
+    btn.onclick = () => { files.splice(i, 1); renderThumbs(); };
+    div.append(img, btn); box.append(div);
+  });
+  $("input-status").textContent = files.length ? `${files.length} photo(s) prête(s)` : "";
+}
+
+// --- Analyse ---
+$("analyze").addEventListener("click", async () => {
+  if (!files.length) { toast("Ajoute au moins une photo"); return; }
+  const btn = $("analyze");
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analyse en cours…';
+  $("input-status").textContent = "Le modèle observe les photos…";
+
+  const fd = new FormData();
+  files.forEach(f => fd.append("photos", f));
+  fd.append("context", $("context").value);
+  fd.append("model", $("model").value);
+
+  try {
+    const r = await fetch("/api/analyze", { method: "POST", body: fd });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Erreur d'analyse");
+    sessionId = data.session_id;
+    lastListing = data.listing;
+    fillResult(data.listing);
+    $("result-card").classList.remove("hidden");
+    $("result-card").scrollIntoView({ behavior: "smooth" });
+    $("input-status").textContent = "";
+  } catch (e) {
+    toast("❌ " + e.message);
+    $("input-status").textContent = "Échec : " + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "✨ Générer la fiche";
+  }
+});
+
+// --- Remplissage de la fiche ---
+function fillResult(L) {
+  $("title").value = L.title || "";
+  $("description").value = L.description || "";
+  $("hashtags").value = (L.hashtags || []).join(" ");
+  $("keywords").value = (L.keywords || []).join(", ");
+  $("price").value = (L.suggested_price_eur != null) ? Math.round(L.suggested_price_eur) : "";
+  renderHashtagChips();
+
+  const A = L.attributes || {};
+  const rows = [
+    ["Type", A.product_type], ["Marque", A.brand], ["Modèle", A.model],
+    ["Couleur", A.color], ["Matière", A.material], ["Style", A.style],
+    ["Taille", A.size], ["État", A.condition],
+    ["Défauts", (A.defects || []).join(", ")], ["Atouts", (A.highlights || []).join(", ")],
+  ];
+  $("attrs").innerHTML = rows.map(([k, v]) =>
+    `<div class="attr"><div class="k">${k}</div><div class="v">${v ? escapeHtml(v) : "—"}</div></div>`
+  ).join("");
+
+  if (L.confidence_notes) {
+    $("notes").textContent = "À vérifier : " + L.confidence_notes;
+    $("notes-wrap").classList.remove("hidden");
+  } else {
+    $("notes-wrap").classList.add("hidden");
+  }
+}
+$("hashtags").addEventListener("input", renderHashtagChips);
+function renderHashtagChips() {
+  const tags = $("hashtags").value.split(/\s+/).filter(Boolean).map(t => t.replace(/^#/, ""));
+  $("hashtag-chips").innerHTML = tags.map(t => `<span class="chip">#${escapeHtml(t)}</span>`).join("");
+}
+function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
+
+// --- Copier ---
+function currentHashtagsLine() {
+  return $("hashtags").value.split(/\s+/).filter(Boolean).map(t => "#" + t.replace(/^#/, "")).join(" ");
+}
+async function copyText(txt) {
+  try { await navigator.clipboard.writeText(txt); toast("Copié ✔"); }
+  catch { toast("Copie impossible"); }
+}
+document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
+  const k = b.dataset.copy;
+  if (k === "hashtags") return copyText(currentHashtagsLine());
+  copyText($(k).value);
+}));
+$("copy-all").addEventListener("click", () => {
+  const parts = [$("title").value, "", $("description").value, "", currentHashtagsLine()];
+  if ($("keywords").value.trim()) parts.push("", "Mots-clés : " + $("keywords").value);
+  copyText(parts.join("\n"));
+});
+
+// --- Fiche éditée -> objet listing ---
+function collectListing() {
+  const L = JSON.parse(JSON.stringify(lastListing || { attributes: {} }));
+  L.title = $("title").value;
+  L.description = $("description").value;
+  L.hashtags = $("hashtags").value.split(/\s+/).filter(Boolean).map(t => t.replace(/^#/, ""));
+  L.keywords = $("keywords").value.split(",").map(s => s.trim()).filter(Boolean);
+  const p = parseFloat($("price").value);
+  L.suggested_price_eur = isNaN(p) ? null : p;
+  return L;
+}
+
+// --- Pré-remplir dans Vinted ---
+$("prefill").addEventListener("click", async () => {
+  const btn = $("prefill");
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Connexion au navigateur…';
+  $("prefill-status").textContent = "";
+  try {
+    const r = await fetch("/api/prefill", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, listing: collectListing(), upload_images: true }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Erreur");
+    const bits = [];
+    bits.push(`${data.photos_uploaded} photo(s) déposée(s)`);
+    bits.push(data.title_filled ? "titre ✔" : "titre ✗");
+    bits.push(data.description_filled ? "description ✔" : "description ✗");
+    $("prefill-status").innerHTML =
+      "✅ " + bits.join(" · ") + "<br>Vérifie catégorie / taille / prix / état dans Chrome, puis <strong>publie toi-même</strong>.";
+    toast("Pré-rempli dans Vinted");
+  } catch (e) {
+    $("prefill-status").textContent = "❌ " + e.message + " — as-tu lancé Chrome via la commande launch ?";
+    toast("❌ " + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "🌐 Pré-remplir dans Vinted";
+  }
+});
+
+// --- Nouvel article ---
+$("restart").addEventListener("click", () => {
+  files = []; lastListing = null; sessionId = null;
+  renderThumbs(); $("context").value = "";
+  $("result-card").classList.add("hidden");
+  $("input-card").scrollIntoView({ behavior: "smooth" });
+});
+</script>
+</body>
+</html>

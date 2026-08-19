@@ -15,6 +15,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "rich>=13.0.0",
     "pillow>=10.0.0",
+    "flask>=3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +26,9 @@ vinted-assistant = "vinted_assistant.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["vinted_assistant*"]
+
+[tool.setuptools.package-data]
+vinted_assistant = ["web/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

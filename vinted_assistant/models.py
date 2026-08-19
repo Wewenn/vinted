@@ -83,9 +83,11 @@ class VintedListing(BaseModel):
         "marque + type + détail marquant), max ~70 caractères.",
     )
     description: str = Field(
-        description="Description Vinted en français, courte mais suffisamment "
-        "détaillée (3 à 6 phrases) : type, marque, taille, matière, état, "
-        "défauts éventuels et atouts. Honnête et sans invention.",
+        description="Description Vinted en français, DÉTAILLÉE et orientée vente "
+        "rapide (5 à 9 phrases, sauts de ligne autorisés) : une accroche, puis "
+        "type + marque + modèle, taille, matière, coupe/style, état et défauts "
+        "éventuels (honnêtement), atouts, et une phrase incitative. Ton dynamique "
+        "et sympathique, sans exagération ni invention.",
     )
     hashtags: List[str] = Field(
         default_factory=list,

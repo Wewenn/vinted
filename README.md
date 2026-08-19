@@ -68,7 +68,32 @@ cp .env.example .env
 
 ## Utilisation
 
-### 1) Lancer Chrome connecté à l'assistant
+Deux façons de travailler : l'**interface web** (recommandée — glisser-déposer)
+ou la **ligne de commande**. Les deux utilisent le même moteur d'analyse.
+
+### 🖥️ Interface web (recommandé)
+
+```bash
+python -m vinted_assistant web
+```
+
+Le navigateur s'ouvre sur l'interface locale. **Dépose tes photos, ajoute
+éventuellement quelques infos, et clique sur « Générer la fiche ».** Tu obtiens
+une fiche détaillée et **entièrement éditable** :
+
+- titre, description (orientée « vendre vite »), caractéristiques, hashtags,
+  mots-clés et prix conseillé indicatif ;
+- un bouton **Copier** par champ, et **« Copier toute la fiche »** ;
+- un bouton **« Pré-remplir dans Vinted »** qui envoie tout dans le formulaire
+  d'annonce de ton navigateur — **sans jamais publier**.
+
+Pour utiliser le bouton « Pré-remplir dans Vinted », lance d'abord Chrome
+connecté à l'assistant (voir ci-dessous). Pour seulement obtenir la fiche à
+copier-coller, la clé API suffit.
+
+### 🔌 Lancer Chrome connecté à l'assistant
+
+Nécessaire uniquement pour le pré-remplissage automatique dans Vinted.
 
 ```bash
 python -m vinted_assistant launch
@@ -90,7 +115,7 @@ Vérifiez que tout est prêt :
 python -m vinted_assistant check
 ```
 
-### 2) Créer une annonce à partir de photos
+### ⌨️ En ligne de commande (alternative)
 
 ```bash
 # Plusieurs photos :
@@ -179,7 +204,9 @@ Structure du projet :
 
 ```
 vinted_assistant/
-├── cli.py         # interface en ligne de commande (orchestration + validation)
+├── cli.py         # interface en ligne de commande (launch / check / web / create)
+├── webapp.py      # serveur Flask local + API (analyse, pré-remplissage)
+├── web/index.html # interface web (glisser-déposer, fiche éditable) — autonome
 ├── analysis.py    # encodage des images + appel vision Claude (sortie structurée)
 ├── models.py      # modèles Pydantic (caractéristiques + annonce)
 ├── prompts.py     # invites en français

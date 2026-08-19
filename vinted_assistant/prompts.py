@@ -15,8 +15,12 @@ champ vide (null) et signale-le dans `confidence_notes`.
 - Sois honnête sur l'état et les défauts : mentionne clairement taches, trous, \
 usure, bouloches, décoloration si tu les vois.
 - Lis les étiquettes visibles (taille, composition, marque) quand c'est possible.
-- La description doit être en français, courte mais suffisamment détaillée \
-(3 à 6 phrases), au ton simple et vendeur, sans exagération.
+- La description doit être en français, DÉTAILLÉE et pensée pour vendre vite \
+(5 à 9 phrases, avec des sauts de ligne si utile) : accroche, caractéristiques \
+(type, marque, modèle, taille, matière, coupe/style), état et défauts honnêtes, \
+atouts, et une phrase incitative. Ton dynamique et sympathique, sans exagération.
+- Suggère un prix conseillé réaliste pour une vente rapide (fourchette basse mais \
+juste) dès que tu as des repères.
 - Les hashtags sont en minuscules, sans espace ni caractère spécial, sans '#'.
 - Les mots-clés correspondent à ce que des acheteurs taperaient dans la recherche.
 - Le prix éventuel est une simple estimation indicative (fourchette basse) : ne \
