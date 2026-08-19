@@ -1,0 +1,17 @@
+# Exemple de configuration Cloudflare Tunnel pour exposer l'assistant Vinted
+# sur un sous-domaine (ex. vinted.tondomaine.com), en HTTPS, tout en gardant
+# l'app sur ta machine (le pré-remplissage Vinted continue de fonctionner).
+#
+# Prérequis : voir la section « Relier à un domaine » du README.
+# Place ce fichier dans ~/.cloudflared/config.yml (adapte les valeurs).
+
+# Identifiant du tunnel créé avec :  cloudflared tunnel create vinted
+tunnel: REMPLACE_PAR_L_ID_DU_TUNNEL
+credentials-file: /Users/TON_USER/.cloudflared/REMPLACE_PAR_L_ID_DU_TUNNEL.json
+
+ingress:
+  # Ton sous-domaine → l'app locale (Flask écoute sur 127.0.0.1:5000).
+  - hostname: vinted.tondomaine.com
+    service: http://localhost:5000
+  # Règle par défaut obligatoire.
+  - service: http_status:404

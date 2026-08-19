@@ -132,6 +132,58 @@ Notes :
   le téléphone, utilise plutôt **« Copier toute la fiche »** puis colle dans
   l'appli Vinted.
 
+#### 🌐 Relier à un domaine (accès depuis internet)
+
+Tu peux exposer l'app sur un sous-domaine à toi (ex. `vinted.tondomaine.com`),
+en **HTTPS**, accessible de n'importe où (4G, autre Wi-Fi), tout en gardant l'app
+sur ton Mac (le pré-remplissage continue de marcher). La méthode recommandée est
+un **Cloudflare Tunnel** : gratuit, HTTPS automatique, et rien à ouvrir sur ta box.
+
+> 🔒 **Obligatoire avant d'exposer sur internet : mets un mot de passe.**
+> Dans `.env` : `VINTED_WEB_PASSWORD=un-mot-de-passe-solide` (sinon n'importe qui
+> avec l'URL peut générer des fiches et consommer tes crédits API).
+
+**1. Mettre le domaine (OVH) sur Cloudflare** (nécessaire pour un domaine perso) :
+- Crée un compte gratuit sur cloudflare.com → « Add a site » → saisis ton domaine.
+- Cloudflare te donne 2 **serveurs de noms** (nameservers). Dans le manager OVH :
+  *Domaines → ton domaine → Serveurs DNS* → remplace-les par ceux de Cloudflare.
+- ⚠️ Si tu utilises ce domaine pour des **e-mails** ou d'autres services, recopie
+  d'abord tes enregistrements (MX, etc.) dans Cloudflare. La propagation prend de
+  quelques minutes à quelques heures.
+
+**2. Installer et connecter cloudflared** (sur le Mac) :
+```bash
+brew install cloudflared
+cloudflared tunnel login            # ouvre le navigateur, choisis ton domaine
+cloudflared tunnel create vinted    # crée le tunnel (donne un ID + un .json)
+cloudflared tunnel route dns vinted vinted.tondomaine.com
+```
+
+**3. Configurer le tunnel** : copie `deploy/cloudflared-config.example.yml` vers
+`~/.cloudflared/config.yml` et remplace l'ID du tunnel et le hostname. Il pointe
+le sous-domaine vers l'app locale (`http://localhost:5000`).
+
+**4. Lancer** (deux terminaux) :
+```bash
+# Terminal 1 : l'app (sur 127.0.0.1, le tunnel s'y connecte en local)
+python -m vinted_assistant web --no-open
+
+# Terminal 2 : le tunnel
+cloudflared tunnel run vinted
+```
+
+Ouvre `https://vinted.tondomaine.com` depuis ton téléphone → saisis le mot de
+passe → tu génères et copies tes fiches. Le pré-remplissage, lui, agit toujours
+sur le Chrome de ton Mac.
+
+**Notes**
+- Le **Mac doit rester allumé** et les deux commandes actives tant que tu veux
+  l'accès distant.
+- Sécurité en plus (optionnel) : **Cloudflare Access** ajoute une couche
+  d'authentification (e-mail à usage unique) devant l'app, en plus du mot de passe.
+- Pas de domaine / test rapide : `cloudflared tunnel --url http://localhost:5000`
+  te donne une URL `*.trycloudflare.com` temporaire, sans configuration DNS.
+
 ### 🔌 Lancer Chrome connecté à l'assistant
 
 Nécessaire uniquement pour le pré-remplissage automatique dans Vinted.

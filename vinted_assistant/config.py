@@ -43,6 +43,8 @@ class Config:
     app_dir: Path
     chrome_profile_dir: Path
     drafts_dir: Path
+    web_password: str | None = None
+    web_secret: str | None = None
 
     @property
     def new_listing_url(self) -> str:
@@ -73,4 +75,6 @@ def load_config() -> Config:
         app_dir=app_dir,
         chrome_profile_dir=app_dir / "chrome-profile",
         drafts_dir=app_dir / "drafts",
+        web_password=os.environ.get("VINTED_WEB_PASSWORD") or None,
+        web_secret=os.environ.get("VINTED_WEB_SECRET") or None,
     )

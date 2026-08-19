@@ -9,6 +9,7 @@ navigateur (jamais de publication automatique).
 
 from __future__ import annotations
 
+import os
 import secrets
 import shutil
 from pathlib import Path
@@ -19,6 +20,37 @@ from .config import Config
 from .models import VintedListing
 
 WEB_DIR = Path(__file__).parent / "web"
+
+_LOGIN_HTML = """<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connexion — Assistant Vinted</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f4f6f7; color: #16232a;
+         display: flex; min-height: 100vh; align-items: center; justify-content: center; margin: 0; }
+  form { background: #fff; padding: 32px; border-radius: 14px; box-shadow: 0 6px 24px rgba(16,40,48,.1);
+         width: min(360px, 90vw); }
+  h1 { font-size: 1.15rem; margin: 0 0 4px; }
+  p.sub { color: #61727a; font-size: .9rem; margin: 0 0 18px; }
+  input { width: 100%; padding: 11px 12px; border: 1px solid #e2e8ea; border-radius: 10px;
+          font: inherit; box-sizing: border-box; }
+  button { width: 100%; margin-top: 12px; padding: 11px; border: none; border-radius: 10px;
+           background: #007782; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+  .err { color: #c0392b; font-size: .88rem; margin: 10px 0 0; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0f1719; color: #e8eef0; } form { background: #162124; }
+    input { background: #0f1719; color: #e8eef0; border-color: #26383d; }
+  }
+</style></head>
+<body>
+  <form method="post" action="/login">
+    <h1>🧥 Assistant Vinted</h1>
+    <p class="sub">Entre le mot de passe pour accéder à l'app.</p>
+    <input type="password" name="password" placeholder="Mot de passe" autofocus required>
+    <button type="submit">Se connecter</button>
+    <!--ERROR-->
+  </form>
+</body></html>"""
 
 
 def _default_client_factory():
@@ -71,7 +103,14 @@ def create_app(
         client_factory: fabrique de client Anthropic (injectable pour les tests).
         prefill_func: fonction de pré-remplissage navigateur (injectable pour les tests).
     """
-    from flask import Flask, jsonify, request, send_from_directory
+    from flask import (
+        Flask,
+        jsonify,
+        redirect,
+        request,
+        send_from_directory,
+        session,
+    )
 
     client_factory = client_factory or _default_client_factory
     prefill_func = prefill_func or _default_prefill_func
@@ -81,6 +120,41 @@ def create_app(
 
     app = Flask(__name__, static_folder=None)
     app.config["MAX_CONTENT_LENGTH"] = 60 * 1024 * 1024  # 60 Mo au total
+    app.secret_key = config.web_secret or os.environ.get(
+        "VINTED_WEB_SECRET"
+    ) or secrets.token_hex(32)
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+    password = config.web_password
+
+    # ------------------------------------------------------------------ #
+    # Authentification (activée seulement si un mot de passe est défini)
+    # ------------------------------------------------------------------ #
+    @app.before_request
+    def _require_auth():
+        if not password:
+            return None  # pas de mot de passe → accès libre (usage local)
+        if request.path in ("/login",) or request.path.startswith("/favicon"):
+            return None
+        if session.get("auth"):
+            return None
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Non authentifié."}), 401
+        return redirect("/login")
+
+    @app.get("/login")
+    def login_form():
+        return _LOGIN_HTML
+
+    @app.post("/login")
+    def login_submit():
+        given = request.form.get("password") or ""
+        if password and secrets.compare_digest(given, password):
+            session["auth"] = True
+            return redirect("/")
+        return _LOGIN_HTML.replace(
+            "<!--ERROR-->", '<p class="err">Mot de passe incorrect.</p>'
+        ), 401
 
     # ------------------------------------------------------------------ #
     # Pages statiques
@@ -243,6 +317,14 @@ def run_server(config: Config, host: str = "127.0.0.1", port: int = 5000,
         threading.Timer(1.0, lambda: webbrowser.open(local_url)).start()
 
     print(f"🌐 Interface locale : {local_url}   (Ctrl+C pour arrêter)")
+
+    if config.web_password:
+        print("🔒 Protégé par mot de passe (VINTED_WEB_PASSWORD).")
+    else:
+        print(
+            "🔓 Sans mot de passe. Pour une exposition sur internet (tunnel/domaine), "
+            "définis VINTED_WEB_PASSWORD."
+        )
 
     if exposed:
         ip = _lan_ip()
