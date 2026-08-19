@@ -340,8 +340,24 @@ function currentHashtagsLine() {
   return $("hashtags").value.split(/\s+/).filter(Boolean).map(t => "#" + t.replace(/^#/, "")).join(" ");
 }
 async function copyText(txt) {
-  try { await navigator.clipboard.writeText(txt); toast("Copié ✔"); }
-  catch { toast("Copie impossible"); }
+  // Presse-papier moderne : uniquement en contexte sécurisé (HTTPS ou localhost).
+  if (navigator.clipboard && window.isSecureContext) {
+    try { await navigator.clipboard.writeText(txt); toast("Copié ✔"); return; }
+    catch { /* bascule vers le fallback ci-dessous */ }
+  }
+  // Fallback pour mobile en http:// (réseau local) : textarea + execCommand.
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = txt;
+    ta.style.position = "fixed"; ta.style.top = "0"; ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select(); ta.setSelectionRange(0, txt.length);
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    toast(ok ? "Copié ✔" : "Sélectionne puis copie manuellement");
+  } catch {
+    toast("Copie impossible — sélectionne le texte à la main");
+  }
 }
 document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
   const k = b.dataset.copy;

@@ -155,3 +155,18 @@ def test_friendly_api_error_credits():
         Exception("Error code: 400 - Your credit balance is too low to access the Anthropic API")
     )
     assert "Crédits Anthropic insuffisants" in msg
+
+
+def test_lan_ip_returns_str_or_none():
+    from vinted_assistant.webapp import _lan_ip
+
+    ip = _lan_ip()
+    assert ip is None or isinstance(ip, str)
+
+
+def test_web_parser_accepts_lan_flag():
+    from vinted_assistant.cli import build_parser
+
+    args = build_parser().parse_args(["web", "--lan", "--port", "5001"])
+    assert args.lan is True
+    assert args.port == 5001

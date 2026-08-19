@@ -355,9 +355,10 @@ def cmd_web(args: argparse.Namespace, config: Config) -> int:
             "⚠️  ANTHROPIC_API_KEY non définie — tentative via un profil "
             "`ant auth login` existant.\n"
         )
+    host = "0.0.0.0" if args.lan else args.host
     run_server(
         config,
-        host=args.host,
+        host=host,
         port=args.port,
         open_browser=not args.no_open,
     )
@@ -396,6 +397,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_web.add_argument("--host", default="127.0.0.1", help="Hôte d'écoute.")
     p_web.add_argument("--port", type=int, default=5000, help="Port d'écoute.")
+    p_web.add_argument(
+        "--lan",
+        action="store_true",
+        help="Rendre l'app accessible sur le réseau local (téléphone, même Wi-Fi) "
+        "+ afficher un QR code.",
+    )
     p_web.add_argument(
         "--no-open", action="store_true", help="Ne pas ouvrir le navigateur."
     )

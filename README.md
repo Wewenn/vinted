@@ -109,6 +109,29 @@ copier-coller, la clé API suffit.
 > balance is too low », ajoute des crédits sur console.anthropic.com →
 > Plans & Billing (quelques euros suffisent, une fiche coûte des centimes).
 
+#### 📱 Ouvrir l'app depuis ton téléphone
+
+L'app tourne sur ton ordinateur ; pour l'ouvrir depuis ton téléphone (sur le
+**même Wi-Fi**), lance-la avec l'option `--lan` :
+
+```bash
+python -m vinted_assistant web --lan
+```
+
+Le terminal affiche alors l'URL à taper sur le téléphone (ex.
+`http://192.168.1.42:5000`) **et un QR code** : scanne-le avec l'appareil photo
+de ton téléphone pour ouvrir l'app directement. Tu décris l'article et tu copies
+la fiche depuis le téléphone.
+
+Notes :
+- macOS peut demander d'**autoriser les connexions entrantes** la première fois
+  → clique « Autoriser ».
+- N'utilise `--lan` que sur un **Wi-Fi de confiance** : toute personne sur le
+  réseau peut alors ouvrir l'app (et chaque génération consomme tes crédits).
+- Le bouton « Pré-remplir dans Vinted » pilote le Chrome de l'ordinateur ; depuis
+  le téléphone, utilise plutôt **« Copier toute la fiche »** puis colle dans
+  l'appli Vinted.
+
 ### 🔌 Lancer Chrome connecté à l'assistant
 
 Nécessaire uniquement pour le pré-remplissage automatique dans Vinted.

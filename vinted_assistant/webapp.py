@@ -196,15 +196,66 @@ def create_app(
     return app
 
 
+def _lan_ip() -> Optional[str]:
+    """Devine l'adresse IP de la machine sur le réseau local (sans rien envoyer)."""
+    import socket
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))  # n'émet aucun paquet en UDP
+            return s.getsockname()[0]
+        finally:
+            s.close()
+    except Exception:
+        return None
+
+
+def _print_qr(url: str) -> bool:
+    """Affiche un QR code ASCII de l'URL dans le terminal, si `qrcode` est présent."""
+    try:
+        import qrcode
+    except ImportError:
+        return False
+    qr = qrcode.QRCode(border=1)
+    qr.add_data(url)
+    qr.make(fit=True)
+    qr.print_ascii(invert=True)
+    return True
+
+
 def run_server(config: Config, host: str = "127.0.0.1", port: int = 5000,
                open_browser: bool = True) -> None:
-    """Démarre le serveur web local (et ouvre le navigateur par défaut)."""
+    """Démarre le serveur web local (et ouvre le navigateur par défaut).
+
+    Si ``host`` n'est pas une adresse de bouclage (ex. ``0.0.0.0`` via l'option
+    ``--lan``), l'app est accessible depuis les autres appareils du réseau
+    (téléphone sur le même Wi-Fi) : on affiche alors l'URL LAN et un QR code.
+    """
     app = create_app(config)
-    url = f"http://{host}:{port}"
+    local_url = f"http://127.0.0.1:{port}"
+    exposed = host not in ("127.0.0.1", "localhost", "::1")
+
     if open_browser:
         import threading
         import webbrowser
 
-        threading.Timer(1.0, lambda: webbrowser.open(url)).start()
-    print(f"🌐 Interface disponible sur {url}  (Ctrl+C pour arrêter)")
+        threading.Timer(1.0, lambda: webbrowser.open(local_url)).start()
+
+    print(f"🌐 Interface locale : {local_url}   (Ctrl+C pour arrêter)")
+
+    if exposed:
+        ip = _lan_ip()
+        if ip:
+            lan_url = f"http://{ip}:{port}"
+            print(f"📱 Depuis ton téléphone (même Wi-Fi) : {lan_url}")
+            print("   Scanne ce QR code avec l'appareil photo de ton téléphone :\n")
+            if not _print_qr(lan_url):
+                print("   (astuce : `pip install qrcode` pour afficher un QR code)\n")
+        else:
+            print("📱 Accessible sur le réseau local (IP LAN non détectée).")
+        print("\n⚠️  L'app est ouverte sur ton réseau local : utilise-la uniquement")
+        print("   sur un Wi-Fi de confiance (chaque génération consomme tes crédits API).")
+        print("   macOS peut demander d'autoriser les connexions entrantes → « Autoriser ».\n")
+
     app.run(host=host, port=port, debug=False)
