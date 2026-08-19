@@ -1,9 +1,13 @@
 # Assistant Vinted 🧥🤖
 
-Un assistant IA personnel qui, **à partir de photos d'un article**, identifie ses
-caractéristiques, rédige une annonce Vinted (titre, description, hashtags,
-mots-clés) et **pré-remplit l'annonce dans _votre_ navigateur** en réutilisant
-votre session Vinted déjà ouverte.
+Un assistant IA personnel qui, **à partir de ta description de l'article (et,
+si tu veux, de photos)**, rédige une annonce Vinted qui vend vite (titre,
+description, hashtags, mots-clés, mesures à ajouter, prix indicatif) selon les
+bonnes pratiques de vente, puis **pré-remplit l'annonce dans _ton_ navigateur**
+en réutilisant ta session Vinted déjà ouverte.
+
+Le texte que tu fournis est la source principale ; **les photos sont
+facultatives** (elles ne servent qu'à confirmer/compléter).
 
 > ⚠️ **L'assistant ne publie JAMAIS une annonce automatiquement.** Il prépare
 > tout et s'arrête ; vous vérifiez et publiez vous-même dans le navigateur.
@@ -13,18 +17,22 @@ votre session Vinted déjà ouverte.
 ## Comment ça marche
 
 ```
-Photos ──▶ Analyse vision (Claude) ──▶ Brouillon d'annonce ──▶ VOTRE validation
+Ta description (+ photos facultatives) ──▶ Rédaction (Claude) ──▶ Fiche d'annonce
                                                                       │
-                                              (connexion à votre Chrome via CDP)
+                                                            ▶ TU valides / édites
+                                                                      │
+                                              (connexion à ton Chrome via CDP)
                                                                       ▼
                                           Pré-remplissage du formulaire Vinted
                                             (titre, description, photos…)
                                                                       │
-                                                          ▶ Vous publiez à la main
+                                                            ▶ Tu publies à la main
 ```
 
-- **Vision** : les photos sont envoyées à un modèle Claude qui identifie type,
-  marque, modèle, couleur, matière, style, taille, état, défauts et atouts.
+- **Rédaction** : ta description (et les photos si tu en ajoutes) est envoyée à
+  un modèle Claude qui produit une annonce optimisée selon les bonnes pratiques
+  Vinted (titre, description structurée, caractéristiques, hashtags, mots-clés,
+  mesures à ajouter, prix indicatif).
 - **Navigateur** : l'outil se connecte à votre Chrome via le **protocole CDP**
   (débogage distant). Il **réutilise votre session Vinted** — il ne voit jamais
   votre identifiant ni votre mot de passe (vous vous connectez à Vinted
@@ -77,19 +85,29 @@ ou la **ligne de commande**. Les deux utilisent le même moteur d'analyse.
 python -m vinted_assistant web
 ```
 
-Le navigateur s'ouvre sur l'interface locale. **Dépose tes photos, ajoute
-éventuellement quelques infos, et clique sur « Générer la fiche ».** Tu obtiens
-une fiche détaillée et **entièrement éditable** :
+Le navigateur s'ouvre sur l'interface locale. **Décris ton article** (marque,
+taille, état, saison, défauts…), ajoute éventuellement des photos, et clique sur
+**« Générer la fiche »**. Tu obtiens une fiche détaillée et **entièrement
+éditable**, rédigée selon les bonnes pratiques Vinted :
 
-- titre, description (orientée « vendre vite »), caractéristiques, hashtags,
-  mots-clés et prix conseillé indicatif ;
+- description structurée pour vendre vite : 1re ligne scannable
+  « Marque • Taille • État », blocs courts (détails factuels, état honnête,
+  contexte, conditions), des faits plutôt que des adjectifs vides ;
+- caractéristiques, hashtags, mots-clés « comme un acheteur », et une liste de
+  **mesures à ajouter** (elles rassurent et accélèrent la vente) ;
+- prix conseillé indicatif ;
 - un bouton **Copier** par champ, et **« Copier toute la fiche »** ;
 - un bouton **« Pré-remplir dans Vinted »** qui envoie tout dans le formulaire
   d'annonce de ton navigateur — **sans jamais publier**.
 
-Pour utiliser le bouton « Pré-remplir dans Vinted », lance d'abord Chrome
+Les **photos sont facultatives** : tu peux générer la fiche à partir du texte
+seul. Pour utiliser le bouton « Pré-remplir dans Vinted », lance d'abord Chrome
 connecté à l'assistant (voir ci-dessous). Pour seulement obtenir la fiche à
 copier-coller, la clé API suffit.
+
+> 💳 **La génération consomme des crédits Anthropic.** Si tu vois « credit
+> balance is too low », ajoute des crédits sur console.anthropic.com →
+> Plans & Billing (quelques euros suffisent, une fiche coûte des centimes).
 
 ### 🔌 Lancer Chrome connecté à l'assistant
 

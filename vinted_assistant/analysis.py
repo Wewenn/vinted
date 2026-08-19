@@ -133,7 +133,7 @@ def encode_image(path: Path, max_dimension: int = MAX_IMAGE_DIMENSION) -> Tuple[
 def _build_content_blocks(
     image_paths: Sequence[Path], extra_context: str | None
 ) -> list:
-    """Construit les blocs de contenu (images + texte) du message utilisateur."""
+    """Construit les blocs de contenu (images éventuelles + texte)."""
     blocks: list = []
     for path in image_paths:
         media_type, data = encode_image(path)
@@ -161,21 +161,26 @@ def analyze_photos(
     extra_context: str | None = None,
     max_tokens: int = 8000,
 ) -> VintedListing:
-    """Analyse les photos et renvoie un brouillon d'annonce structuré.
+    """Génère un brouillon d'annonce à partir de photos et/ou d'un texte.
+
+    Les photos sont FACULTATIVES : si aucune n'est fournie, l'annonce est
+    rédigée uniquement à partir de ``extra_context``.
 
     Args:
         client: instance ``anthropic.Anthropic`` (injectée pour la testabilité).
-        image_paths: chemins des photos de l'article.
+        image_paths: chemins des photos (peut être vide).
         model: identifiant du modèle Claude à utiliser.
-        extra_context: informations complémentaires facultatives.
+        extra_context: informations fournies par le vendeur.
         max_tokens: budget de sortie.
     """
     paths = list(image_paths)
-    if not paths:
-        raise AnalysisError("Aucune image à analyser.")
     if len(paths) > MAX_IMAGES:
         raise AnalysisError(
             f"Trop de photos ({len(paths)}). Maximum accepté : {MAX_IMAGES}."
+        )
+    if not paths and not (extra_context and extra_context.strip()):
+        raise AnalysisError(
+            "Fournis au moins une photo ou une description de l'article."
         )
 
     content = _build_content_blocks(paths, extra_context)

@@ -41,6 +41,24 @@ def _safe_name(name: str, index: int) -> str:
     return f"{index:02d}{suffix}"
 
 
+def _friendly_api_error(exc: Exception) -> str:
+    """Traduit les erreurs API courantes en messages clairs pour l'utilisateur."""
+    text = str(exc)
+    low = text.lower()
+    if "credit balance is too low" in low or "purchase credits" in low:
+        return (
+            "Crédits Anthropic insuffisants. Ajoute des crédits sur "
+            "console.anthropic.com → Plans & Billing, puis réessaie."
+        )
+    if "authentication" in low or "invalid x-api-key" in low or "401" in low:
+        return "Clé API Anthropic invalide. Vérifie ANTHROPIC_API_KEY dans .env."
+    if "rate limit" in low or "429" in low:
+        return "Trop de requêtes (limite atteinte). Réessaie dans un instant."
+    if "not_found" in low or "model" in low and "404" in low:
+        return "Modèle introuvable. Vérifie le nom du modèle dans les options."
+    return f"Échec de l'analyse : {text}"
+
+
 def create_app(
     config: Config,
     client_factory: Optional[Callable] = None,
@@ -88,13 +106,16 @@ def create_app(
     def api_analyze():
         files = request.files.getlist("photos")
         files = [f for f in files if f and f.filename]
-        if not files:
-            return jsonify({"error": "Aucune photo reçue."}), 400
-
         context = (request.form.get("context") or "").strip() or None
         model = (request.form.get("model") or "").strip() or config.model
 
-        # Sauvegarde des photos dans un dossier de session.
+        # Photos FACULTATIVES : il faut au moins des photos OU une description.
+        if not files and not context:
+            return jsonify(
+                {"error": "Ajoute au moins une photo ou une description de l'article."}
+            ), 400
+
+        # Sauvegarde des éventuelles photos dans un dossier de session.
         session_id = secrets.token_hex(8)
         session_dir = uploads_root / session_id
         session_dir.mkdir(parents=True, exist_ok=True)
@@ -115,7 +136,7 @@ def create_app(
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:  # erreurs API / réseau
             shutil.rmtree(session_dir, ignore_errors=True)
-            return jsonify({"error": f"Échec de l'analyse : {exc}"}), 502
+            return jsonify({"error": _friendly_api_error(exc)}), 502
 
         return jsonify(
             {

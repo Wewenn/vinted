@@ -111,7 +111,7 @@
 <header>
   <div class="wrap">
     <h1>🧥 Assistant Vinted</h1>
-    <p>Dépose tes photos + quelques infos → une fiche détaillée prête à vendre vite.</p>
+    <p>Décris ton article → une fiche détaillée qui vend vite (titre, description, hashtags…). Photos facultatives.</p>
     <span class="badge">🔒 Ne publie jamais sans toi</span>
   </div>
 </header>
@@ -119,17 +119,22 @@
 <main>
   <!-- Étape 1 : entrées -->
   <section class="card" id="input-card">
-    <h2>1. Tes photos</h2>
-    <div class="drop" id="drop">
-      <div>📷 <strong>Clique</strong> ou glisse-dépose ici tes photos de l'article</div>
-      <div class="muted" style="margin-top:6px">JPG, PNG, WEBP — plusieurs angles = meilleure analyse (max 20)</div>
-      <input type="file" id="file" accept="image/*" multiple class="hidden" />
-    </div>
-    <div class="thumbs" id="thumbs"></div>
+    <h2>1. Décris ton article</h2>
 
-    <div class="field" style="margin-top:18px">
-      <label for="context">Infos complémentaires (facultatif)</label>
-      <textarea id="context" rows="2" placeholder="ex. taille M, portée 2 fois, achetée en 2023, petite tache au dos…"></textarea>
+    <div class="field">
+      <label for="context">Ce que tu sais sur l'article <span style="color:var(--err)">*</span></label>
+      <textarea id="context" rows="4" placeholder="ex. Maillot du SM Caen, third, saison 24/25, taille XL, très bon état, jamais porté, marque Kappa. Petite trace au col."></textarea>
+      <div class="muted" style="margin-top:6px">Marque, modèle, type, taille, couleur, matière, état, défauts, saison… Plus tu en dis, meilleure est la fiche.</div>
+    </div>
+
+    <div class="field">
+      <label>Photos (facultatif)</label>
+      <div class="drop" id="drop">
+        <div>📷 <strong>Clique</strong> ou glisse-dépose des photos (optionnel)</div>
+        <div class="muted" style="margin-top:6px">JPG, PNG, WEBP — elles aident à confirmer les détails (max 20)</div>
+        <input type="file" id="file" accept="image/*" multiple class="hidden" />
+      </div>
+      <div class="thumbs" id="thumbs"></div>
     </div>
 
     <details>
@@ -167,8 +172,13 @@
     </div>
 
     <div class="field">
-      <label>Caractéristiques détectées</label>
+      <label>Caractéristiques</label>
       <div class="attrs" id="attrs"></div>
+    </div>
+
+    <div class="field hidden" id="measures-field">
+      <label>📏 Mesures à ajouter <span class="muted" style="font-weight:400">— relève-les et ajoute-les, ça rassure l'acheteur et accélère la vente</span></label>
+      <div class="chips" id="measures-chips"></div>
     </div>
 
     <div class="field">
@@ -253,10 +263,12 @@ function renderThumbs() {
 
 // --- Analyse ---
 $("analyze").addEventListener("click", async () => {
-  if (!files.length) { toast("Ajoute au moins une photo"); return; }
+  if (!files.length && !$("context").value.trim()) {
+    toast("Décris ton article (ou ajoute une photo)"); $("context").focus(); return;
+  }
   const btn = $("analyze");
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analyse en cours…';
-  $("input-status").textContent = "Le modèle observe les photos…";
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Rédaction en cours…';
+  $("input-status").textContent = "Rédaction de la fiche…";
 
   const fd = new FormData();
   files.forEach(f => fd.append("photos", f));
@@ -300,6 +312,14 @@ function fillResult(L) {
   $("attrs").innerHTML = rows.map(([k, v]) =>
     `<div class="attr"><div class="k">${k}</div><div class="v">${v ? escapeHtml(v) : "—"}</div></div>`
   ).join("");
+
+  const measures = L.measurements_to_add || [];
+  if (measures.length) {
+    $("measures-chips").innerHTML = measures.map(m => `<span class="chip">📏 ${escapeHtml(m)}</span>`).join("");
+    $("measures-field").classList.remove("hidden");
+  } else {
+    $("measures-field").classList.add("hidden");
+  }
 
   if (L.confidence_notes) {
     $("notes").textContent = "À vérifier : " + L.confidence_notes;

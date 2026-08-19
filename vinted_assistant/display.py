@@ -64,6 +64,9 @@ def render_listing(listing: VintedListing, photo_count: int) -> None:
     body.append(listing.hashtags_line() + "\n\n")
     body.append("Mots-clés\n", style="bold cyan")
     body.append(_plain(listing.keywords) + "\n")
+    if listing.measurements_to_add:
+        body.append("\nMesures à ajouter\n", style="bold cyan")
+        body.append(_plain(listing.measurements_to_add) + "\n")
     if listing.suggested_price_eur is not None:
         body.append("\nEstimation de prix (indicative)\n", style="bold cyan")
         body.append(f"~ {listing.suggested_price_eur:.0f} €\n")
@@ -96,6 +99,8 @@ def _render_plain(listing: VintedListing, photo_count: int) -> None:
     print(f"\nDescription :\n{listing.description}")
     print(f"\nHashtags    : {listing.hashtags_line()}")
     print(f"Mots-clés   : {_plain(listing.keywords)}")
+    if listing.measurements_to_add:
+        print(f"Mesures à ajouter : {_plain(listing.measurements_to_add)}")
     if listing.suggested_price_eur is not None:
         print(f"Prix (indicatif) : ~ {listing.suggested_price_eur:.0f} €")
     if listing.confidence_notes:

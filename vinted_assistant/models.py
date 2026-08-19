@@ -83,11 +83,33 @@ class VintedListing(BaseModel):
         "marque + type + détail marquant), max ~70 caractères.",
     )
     description: str = Field(
-        description="Description Vinted en français, DÉTAILLÉE et orientée vente "
-        "rapide (5 à 9 phrases, sauts de ligne autorisés) : une accroche, puis "
-        "type + marque + modèle, taille, matière, coupe/style, état et défauts "
-        "éventuels (honnêtement), atouts, et une phrase incitative. Ton dynamique "
-        "et sympathique, sans exagération ni invention.",
+        description=(
+            "Description Vinted PRÊTE À PUBLIER, rédigée pour vendre vite "
+            "(80 à 200 mots, en blocs courts séparés par des sauts de ligne). "
+            "Structure :\n"
+            "1) Première ligne scannable : « Marque • Taille • État » "
+            "(ex. « Nike • Taille M • Très bon état »).\n"
+            "2) Détails concrets : type, coupe, couleur exacte, matière, "
+            "particularités — des FAITS, pas d'adjectifs vides (évite "
+            "« magnifique », « sublime », « superbe » : personne ne les cherche).\n"
+            "3) État honnête : précise l'usure ou les défauts s'il y en a.\n"
+            "4) Contexte court (occasion de port, raison de vente) puis "
+            "conditions : prix négociable, réduction sur lot, envoi rapide et "
+            "soigné.\n"
+            "Base-toi EN PRIORITÉ sur les informations fournies par le vendeur. "
+            "N'invente jamais un fait non fourni et non visible."
+        ),
+    )
+    measurements_to_add: List[str] = Field(
+        default_factory=list,
+        description=(
+            "Mesures à plat que le vendeur devrait relever puis ajouter pour "
+            "rassurer l'acheteur (elles réduisent fortement l'hésitation). "
+            "Adapte au type d'article : pour un haut/maillot → "
+            "« largeur poitrine (d'aisselle à aisselle) », « longueur totale » ; "
+            "pour un pantalon → « tour de taille à plat », « entrejambe » ; "
+            "pour des chaussures → « longueur semelle intérieure ». 2 à 4 éléments."
+        ),
     )
     hashtags: List[str] = Field(
         default_factory=list,

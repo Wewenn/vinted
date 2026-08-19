@@ -92,9 +92,21 @@ def test_config_endpoint(client):
     assert r.get_json()["model"] == "claude-opus-5"
 
 
-def test_analyze_requires_photo(client):
+def test_analyze_requires_photo_or_text(client):
     r = client.post("/api/analyze", data={})
     assert r.status_code == 400
+
+
+def test_analyze_text_only(client):
+    r = client.post(
+        "/api/analyze",
+        data={"context": "maillot SM Caen third saison 24/25, taille XL"},
+        content_type="multipart/form-data",
+    )
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["photo_count"] == 0
+    assert body["listing"]["title"]
 
 
 def test_analyze_returns_listing(client):
@@ -134,3 +146,12 @@ def test_prefill_uses_saved_photos(client):
 def test_prefill_rejects_missing_listing(client):
     r = client.post("/api/prefill", json={"session_id": "x"})
     assert r.status_code == 400
+
+
+def test_friendly_api_error_credits():
+    from vinted_assistant.webapp import _friendly_api_error
+
+    msg = _friendly_api_error(
+        Exception("Error code: 400 - Your credit balance is too low to access the Anthropic API")
+    )
+    assert "Crédits Anthropic insuffisants" in msg

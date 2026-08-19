@@ -243,16 +243,21 @@ def _do_prefill(config: Config, listing: VintedListing, paths: List[Path],
 
 
 def cmd_create(args: argparse.Namespace, config: Config) -> int:
-    # 1. Résolution des photos.
-    try:
-        paths = resolve_image_paths(args.photos, directory=args.dir)
-    except AnalysisError as exc:
-        _echo(f"❌ {exc}")
-        return 1
+    # 1. Résolution des photos (facultatives : texte seul possible).
+    paths: List[Path] = []
+    if args.photos or args.dir:
+        try:
+            paths = resolve_image_paths(args.photos, directory=args.dir)
+        except AnalysisError as exc:
+            _echo(f"❌ {exc}")
+            return 1
 
-    _echo(f"📸 {len(paths)} photo(s) à analyser :")
-    for p in paths:
-        _echo(f"   • {p}")
+    if paths:
+        _echo(f"📸 {len(paths)} photo(s) à analyser :")
+        for p in paths:
+            _echo(f"   • {p}")
+    else:
+        _echo("📝 Mode texte : génération à partir de ta description.")
 
     if not config.anthropic_api_key:
         _echo(
@@ -260,8 +265,8 @@ def cmd_create(args: argparse.Namespace, config: Config) -> int:
             "`ant auth login` existant."
         )
 
-    # 2. Analyse.
-    _echo("\n🔎 Analyse des photos en cours…")
+    # 2. Génération.
+    _echo("\n🔎 Rédaction de la fiche en cours…")
     try:
         client = _build_client()
         listing = analyze_photos(
@@ -436,8 +441,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     config = load_config()
     config.ensure_dirs()
 
-    if args.command == "create" and not args.photos and not args.dir:
-        parser.error("fournissez des photos ou un dossier via --dir.")
+    if (
+        args.command == "create"
+        and not args.photos
+        and not args.dir
+        and not args.context
+    ):
+        parser.error(
+            "fournissez des photos, un dossier (--dir) ou une description (--context)."
+        )
 
     return args.func(args, config)
 

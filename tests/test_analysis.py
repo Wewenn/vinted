@@ -142,7 +142,21 @@ def test_analyze_photos_rejects_too_many(tmp_path):
         analyze_photos(client, photos, model="claude-opus-5")
 
 
-def test_analyze_photos_empty_raises():
+def test_analyze_photos_empty_without_context_raises():
     client = _FakeClient(_listing())
     with pytest.raises(AnalysisError):
         analyze_photos(client, [], model="claude-opus-5")
+
+
+def test_analyze_text_only_works():
+    """Sans photo mais avec une description : génération autorisée."""
+    client = _FakeClient(_listing())
+    result = analyze_photos(
+        client, [], model="claude-opus-5", extra_context="robe Zara taille M"
+    )
+    assert result.attributes.brand == "Zara"
+    call = client.messages.calls[0]
+    content = call["messages"][0]["content"]
+    # Aucun bloc image, uniquement du texte.
+    assert all(block.get("type") != "image" for block in content)
+    assert any(block.get("type") == "text" for block in content)

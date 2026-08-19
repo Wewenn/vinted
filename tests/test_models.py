@@ -51,3 +51,12 @@ def test_defaults_are_empty_lists():
     assert attrs.defects == []
     assert attrs.highlights == []
     assert attrs.brand is None
+
+
+def test_measurements_to_add_default_and_roundtrip():
+    listing = _sample_listing()
+    assert listing.measurements_to_add == []  # défaut
+    listing.measurements_to_add = ["tour de taille à plat", "entrejambe"]
+    data = json.loads(listing.model_dump_json())
+    restored = VintedListing.model_validate(data)
+    assert restored.measurements_to_add == ["tour de taille à plat", "entrejambe"]
